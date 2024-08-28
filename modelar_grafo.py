@@ -1,67 +1,80 @@
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Função para limpar e converter valores monetários
 def limpar_valor(valor):
     if pd.isna(valor):
         return valor
     valor = str(valor)
-    # Remover pontos de milhar e substituir vírgulas por pontos decimais
     valor = valor.replace('.', '').replace(',', '.')
     try:
         return float(valor)
     except ValueError:
         return None
 
-# Carregar o DataFrame com o delimitador correto e codificação apropriada
+df_trends = pd.read_csv('multiTimeline.csv', header=1)  
+df_trends['Data'] = pd.to_datetime(df_trends['Semana'])
+
 try:
-    df = pd.read_csv('pagamentos-publicidade-2017.csv', delimiter=';', encoding='ISO-8859-1')
+    df_pagamentos = pd.read_csv('pagamentos-publicidade-2017.csv', delimiter=';', encoding='ISO-8859-1')
 except UnicodeDecodeError:
-    df = pd.read_csv('pagamentos-publicidade-2017.csv', delimiter=';', encoding='utf-16')
+    df_pagamentos = pd.read_csv('pagamentos-publicidade-2017.csv', delimiter=';', encoding='utf-16')
 
-# Verificar os nomes das colunas
-print("Nomes das colunas:", df.columns)
+df_pagamentos.columns = df_pagamentos.columns.str.strip()
 
-# Limpar espaços e caracteres especiais nos nomes das colunas
-df.columns = df.columns.str.strip()
-
-# Verificar novamente os nomes das colunas após a limpeza
-print("Nomes das colunas após limpeza:", df.columns)
-
-# Selecionar as colunas e remover linhas com valores ausentes
-try:
-    df_clean = df[['Agencia', 'Subcontratado', 'Bruto PI']].dropna()
-except KeyError as e:
-    print(f"Erro: {e}")
-    print("Certifique-se de que as colunas 'Agencia', 'Subcontratado' e 'Bruto PI' existem no DataFrame.")
-    exit()
-
-# Aplicar a função de limpeza na coluna 'Bruto PI'
+df_clean = df_pagamentos[['Agencia', 'Subcontratado', 'Bruto PI']].dropna()
 df_clean['Bruto PI'] = df_clean['Bruto PI'].apply(limpar_valor)
-
-# Remover linhas com valores inválidos após a conversão
 df_clean = df_clean.dropna(subset=['Bruto PI'])
 
-# Criar o grafo
+threshold = 300000
+
+df_filtered = df_clean[df_clean['Bruto PI'] >= threshold]
+
+df_correio_braziliense = df_filtered[df_filtered['Subcontratado'].str.contains('Correio Braziliense', case=False, na=False)]
+
 G = nx.Graph()
 
-# Adicionar arestas ao grafo
-for _, row in df_clean.iterrows():
+for i in range(len(df_trends)):
+    data = df_trends['Data'].iloc[i]
+    popularidade = df_trends[df_trends.columns[1]].iloc[i]
+    G.add_node(data, type='trends', popularity=popularidade)
+
+for _, row in df_correio_braziliense.iterrows():
     agencia = row['Agencia']
-    subcontratado = row['Subcontratado']
     valor_bruto_pi = row['Bruto PI']
     
-    G.add_edge(agencia, subcontratado, weight=valor_bruto_pi)
+    G.add_node(agencia, type='pagamento', valor=valor_bruto_pi)
+    
+    for data in df_trends['Data']:
+        G.add_edge(data, agencia, weight=valor_bruto_pi)
 
-# Desenhar o grafo
-plt.figure(figsize=(20, 20))
+node_colors = []
+node_sizes = []
+
+for node in G.nodes():
+    if G.nodes[node]['type'] == 'trends':
+        node_colors.append(G.nodes[node].get('popularity', 0))
+        node_sizes.append(G.nodes[node].get('popularity', 0) * 0.1)
+    else:
+        node_colors.append(0)
+        node_sizes.append(G.nodes[node].get('valor', 0) * 0.1)
+
+node_sizes = [max(size, 20) for size in node_sizes]
+
+plt.figure(figsize=(15, 10))
 pos = nx.spring_layout(G, seed=42)
-nx.draw(G, pos, with_labels=True, node_size=100, node_color='lightblue', edge_color='pink', font_size=6)
 
-# Adicionar rótulos das arestas
-edge_labels = nx.get_edge_attributes(G, 'weight')
-nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=6)
+nodes = nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color=node_colors, cmap='coolwarm', node_shape='o')
+edges = nx.draw_networkx_edges(G, pos)
+labels = nx.draw_networkx_labels(G, pos, font_size=8, font_weight='bold')
+edge_labels = nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G, 'weight'), font_size=8)
 
-plt.title('Grafo de Agências e Subcontratados')
+cbar_ax = plt.gca().inset_axes([0.85, 0.1, 0.03, 0.8])
+sm = plt.cm.ScalarMappable(cmap='coolwarm', norm=plt.Normalize(vmin=min(node_colors), vmax=max(node_colors)))
+sm.set_array([])
+cbar = plt.colorbar(sm, cax=cbar_ax)
+cbar.set_label('Popularidade')
+
+plt.title('Grafo de Popularidade do Google Trends e Pagamentos ao Correio Braziliense')
 plt.show()

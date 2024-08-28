@@ -1,0 +1,11 @@
+Conexões entre agências de publicidade e subcontratados
+
+Cada nó no grafo representa uma entidade (uma agência ou um subcontratado),
+e cada aresta representa uma relação financeira, ou seja, um pagamento bruto realizado entre uma agência e um subcontratado.
+
+Ao analisar os nós mais conectados e as arestas mais grossas, você pode identificar quais são as agências
+mais influentes e quais subcontratados desempenham um papel central no mercado de publicidade em 2017.
+
+https://www.comunicacao.df.gov.br/gastos-consolidados-2017/
+https://www.sindatedf.com.br/2017/06/gdf-gasta-r-20-milhoes-em-publicidade-no-primeiro-trimestre-de-2017.html
+https://trends.google.com.br/trends/explore?date=2017-01-01%202017-12-31&geo=BR&q=Correios%20braziliense&hl=pt
