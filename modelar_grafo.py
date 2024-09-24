@@ -14,13 +14,13 @@ def limpar_valor(valor):
         return None
 
 def modelar_grafo(nome):
-    df_trends = pd.read_csv(f'projeto_grafos/{nome}.csv', header=1)
+    df_trends = pd.read_csv(f'csv/{nome}.csv', header=1)
     df_trends['Data'] = pd.to_datetime(df_trends['Semana'])
 
     try:
-        df_pagamentos = pd.read_csv('projeto_grafos/pagamentos-publicidade-2017.csv', delimiter=';', encoding='ISO-8859-1')
+        df_pagamentos = pd.read_csv('csv/pagamentos-publicidade-2017.csv', delimiter=';', encoding='ISO-8859-1')
     except UnicodeDecodeError:
-        df_pagamentos = pd.read_csv('projeto_grafos/pagamentos-publicidade-2017.csv', delimiter=';', encoding='utf-16')
+        df_pagamentos = pd.read_csv('csv/pagamentos-publicidade-2017.csv', delimiter=';', encoding='utf-16')
 
     df_pagamentos.columns = df_pagamentos.columns.str.strip()
 
@@ -51,7 +51,7 @@ def modelar_grafo(nome):
         agencia = row['Agencia']
         valor_bruto_pi = row['Bruto PI']
         
-        G.add_node(agencia, type='pagamento', valor=valor_bruto_pi)
+        G.add_node(agencia, type='pagamento', valor=10000)
         
         for i, data in enumerate(df_trends['Data']):
             G.add_edge(data, agencia, weight=edge_values[i])
