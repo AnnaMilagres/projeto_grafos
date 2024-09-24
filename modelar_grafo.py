@@ -14,13 +14,13 @@ def limpar_valor(valor):
         return None
 
 def modelar_grafo(nome):
-    df_trends = pd.read_csv('multiTimeline.csv', header=1)  
+    df_trends = pd.read_csv(f'projeto_grafos/{nome}.csv', header=1)
     df_trends['Data'] = pd.to_datetime(df_trends['Semana'])
 
     try:
-        df_pagamentos = pd.read_csv('pagamentos-publicidade-2017.csv', delimiter=';', encoding='ISO-8859-1')
+        df_pagamentos = pd.read_csv('projeto_grafos/pagamentos-publicidade-2017.csv', delimiter=';', encoding='ISO-8859-1')
     except UnicodeDecodeError:
-        df_pagamentos = pd.read_csv('pagamentos-publicidade-2017.csv', delimiter=';', encoding='utf-16')
+        df_pagamentos = pd.read_csv('projeto_grafos/pagamentos-publicidade-2017.csv', delimiter=';', encoding='utf-16')
 
     df_pagamentos.columns = df_pagamentos.columns.str.strip()
 
@@ -36,8 +36,7 @@ def modelar_grafo(nome):
 
     G = nx.Graph()
 
-    # Gerar valores aleatórios para arestas que somam 306.560,59
-    total_value = 306560.59
+    total_value = df_correio_braziliense['Bruto PI'].sum()
     num_edges = len(df_trends)
     np.random.seed(42)
     edge_values = np.random.rand(num_edges)
